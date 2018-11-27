@@ -150,7 +150,8 @@ public class MainActivity extends Activity  implements DownResultInterface,ZipEx
 
     // String requestPath="http://7xjww9.com1.z0.glb.clouddn.com/Hopetoun_falls.jpg";
 
-    String requestPath="https://github.com/Michelle0716/UtilTool/archive/V1.1.zip";
+   // String requestPath="https://github.com/Michelle0716/UtilTool/archive/V1.1.zip";
+    String requestPath="https://github.com/Michelle0716/DownloadFile/archive/V1.0.1.zip";
     String sdDown=path+"/mythroads/";
     String name=new File(requestPath).getName();;
 

@@ -96,6 +96,9 @@ public class DownLoaderTask extends AsyncTask<Void, Integer, Long> {
             return;
         if(values.length>1){
             int contentLength = values[1];
+            totalSize=contentLength;
+            Log.e("download","onProgressUpdate下载总量： "+values[1]);
+
             if(contentLength==-1){
                 mDialog.setIndeterminate(true);
             }
@@ -130,14 +133,14 @@ public class DownLoaderTask extends AsyncTask<Void, Integer, Long> {
         try {
             connection = mUrl.openConnection();
             int length = connection.getContentLength();
-            totalSize=length;
-            Log.e("download","下载总量： "+length);
             if(mFile.exists()&&length == mFile.length()){
                 Log.d(TAG, "file "+mFile.getName()+" already exits!!");
                 return 0l;
             }
             mOutputStream = new ProgressReportingOutputStream(mFile);
             publishProgress(0,length);
+            totalSize=length;
+            Log.e("download","下载总量： "+length);
             bytesCopied =copy(connection.getInputStream(),mOutputStream);
             if(bytesCopied!=length&&length!=-1){
                 Log.e(TAG, "Download incomplete bytesCopied="+bytesCopied+", length"+length);
@@ -204,8 +207,11 @@ public class DownLoaderTask extends AsyncTask<Void, Integer, Long> {
             super.write(buffer, byteOffset, byteCount);
 
             mProgress += byteCount;
-            float pressent = (float) mProgress / totalSize * 100;//i 和 mNumber都是int型数
-            Log.e(TAG,"下载进度"+pressent);
+            Log.e(TAG,"下载进度"+mProgress);
+            float pressent = (float) mProgress / totalSize;
+            Log.e(TAG,"下载进度1"+pressent);
+            pressent=pressent    * 100;//i 和 mNumber都是int型数
+            Log.e(TAG,"下载进度2"+pressent);
             int num=(int)(pressent);
 
             publishProgress(num);
