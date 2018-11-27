@@ -205,7 +205,7 @@ public class DownLoaderTask extends AsyncTask<Void, Integer, Long> {
 
             mProgress += byteCount;
             float pressent = (float) mProgress / totalSize * 100;//i 和 mNumber都是int型数
-            Log.e(TAG,"解压进度"+pressent);
+            Log.e(TAG,"下载进度"+pressent);
             int num=(int)(pressent);
 
             publishProgress(num);

@@ -187,13 +187,13 @@ public class MainActivity extends Activity  implements DownResultInterface,ZipEx
     public void downloadSuccess() {
         Log.e(TAG, "downloadSuccess");
         showUnzipDialog();
-        text.setText("下载成功");
+      //  text.setText("下载成功");
     }
 
     @Override
     public void downloadError() {
         Log.e(TAG,"downloadError");
-        text.setText("下载失败");
+      //  text.setText("下载失败");
     }
 
     @Override
@@ -203,13 +203,14 @@ public class MainActivity extends Activity  implements DownResultInterface,ZipEx
 
     @Override
     public void ZipExtraSuccess() {
-        text.setText("解压成功");
+
+     //   text.setText("解压成功");
         Log.e(TAG,"ZipExtraSuccess");
     }
 
     @Override
     public void ZipExtraError() {
-        text.setText("解压失败");
+      //  text.setText("解压失败");
         Log.e(TAG,"ZipExtraError()");
     }
 
