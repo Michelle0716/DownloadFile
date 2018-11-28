@@ -5,13 +5,17 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.widget.TextView;
 
 import com.michelle.downloadUtil.DownLoaderTask;
 import com.michelle.downloadUtil.DownResultInterface;
+import com.michelle.downloadUtil.UpdataApkUtil;
 import com.michelle.downloadUtil.ZipExtraResultInterface;
 import com.michelle.downloadUtil.ZipExtractorTask;
 
@@ -29,26 +33,28 @@ import java.io.File;
  * email: 1031983332@qq.com
  */
 
-public class MainActivity extends Activity  implements DownResultInterface,ZipExtraResultInterface {
+public class MainActivity extends Activity implements DownResultInterface, ZipExtraResultInterface {
 
     public static final String ROOT_DIR = "/mnt/sdcard/mythroad";
-    private final String TAG="MainActivity";
+    private final String TAG = "MainActivity";
     private TextView text;
+    private UpdataApkUtil updataApkUtil;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Log.d(TAG, "Environment.getExternalStorageDirectory()="+ Environment.getExternalStorageDirectory());
-        Log.d(TAG, "getCacheDir().getAbsolutePath()="+getCacheDir().getAbsolutePath());
-        text=(TextView)findViewById(R.id.text);
+        Log.d(TAG, "Environment.getExternalStorageDirectory()=" + Environment.getExternalStorageDirectory());
+        Log.d(TAG, "getCacheDir().getAbsolutePath()=" + getCacheDir().getAbsolutePath());
+        text = (TextView) findViewById(R.id.text);
         showDownLoadDialog();
         sdIsExits();
-
+        updataApkUtil = new UpdataApkUtil();
     }
 
     /**
-     *  判断SD卡是否存在,并且是否具有读写权限
+     * 判断SD卡是否存在,并且是否具有读写权限
      */
     private boolean sdIsExits() {
         String status = Environment.getExternalStorageState();
@@ -80,7 +86,7 @@ public class MainActivity extends Activity  implements DownResultInterface,ZipEx
         }
     }
 
-    private void showDownLoadDialog(){
+    private void showDownLoadDialog() {
         new AlertDialog.Builder(this).setTitle("下载")
                 .setMessage("确认下载")
                 .setPositiveButton("确认", new DialogInterface.OnClickListener() {
@@ -88,9 +94,9 @@ public class MainActivity extends Activity  implements DownResultInterface,ZipEx
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // TODO Auto-generated method stub
-                        Log.d(TAG, "onClick 1 = "+which);
+                        Log.d(TAG, "onClick 1 = " + which);
                         dialog.dismiss();
-                        doDownLoadWork(requestPath,sdDown);
+                        doDownLoadWork(Constant.requestPath, Constant.sdDown);
                     }
                 })
                 .setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -99,65 +105,75 @@ public class MainActivity extends Activity  implements DownResultInterface,ZipEx
                     public void onClick(DialogInterface dialog, int which) {
                         // TODO Auto-generated method stub
                         dialog.dismiss();
-                        Log.d(TAG, "onClick 2 = "+which);
+                        Log.d(TAG, "onClick 2 = " + which);
                     }
                 })
                 .show();
     }
 
-    public void showUnzipDialog(){
-        inPath=sdDown+new File(requestPath).getName();
-        if(!inPath.endsWith("zip")){
-            Log.e(TAG,"非zip文件");
+    public void showUnzipDialog() {
+        Constant.inPath = Constant.sdDown + new File(Constant.requestPath).getName();
+        if (Constant.inPath.endsWith("zip")) {
+            Log.e(TAG, "zip文件");
+            new AlertDialog.Builder(this).setTitle("解压")
+                    .setMessage("解压？")
+                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // TODO Auto-generated method stub
+                            Log.d(TAG, "onClick 1 = " + which);
+                            doZipExtractorWork(Constant.inPath, Constant.outPath);
+                        }
+                    })
+                    .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // TODO Auto-generated method stub
+                            Log.d(TAG, "onClick 2 = " + which);
+                        }
+                    })
+                    .show();
+
+        } else if (Constant.inPath.endsWith("apk")) {
+            Log.e(TAG, "apk文件");
+            File apkFile = new File(Constant.inPath);
+            Log.e(TAG, "apk目录： " + apkFile.getAbsolutePath());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                Uri contentUris = FileProvider.getUriForFile(getApplicationContext(), BuildConfig.APPLICATION_ID + ".fileProvider", apkFile);
+                updataApkUtil.installApk(contentUris, getApplicationContext());
+
+            } else {
+                Uri uri = Uri.fromFile(apkFile);
+                updataApkUtil.installApk(uri, getApplicationContext());
+
+            }
+
+        } else {
             return;
         }
-        new AlertDialog.Builder(this).setTitle("解压")
-                .setMessage("解压？")
-                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
 
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // TODO Auto-generated method stub
-                        Log.d(TAG, "onClick 1 = "+which);
-                        doZipExtractorWork(inPath,outPath);
-                    }
-                })
-                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // TODO Auto-generated method stub
-                        Log.d(TAG, "onClick 2 = "+which);
-                    }
-                })
-                .show();
     }
 
-    String path=Environment.getExternalStorageDirectory().getAbsolutePath();
-    String inPath=path+"/mythroad/maopao.zip";
-    String outPath=path+"/mytsss/";
 
-
-    public void doZipExtractorWork(String in ,String out){
-        File file =new File(out);
-        if(!file.exists()){
+    public void doZipExtractorWork(String in, String out) {
+        File file = new File(out);
+        if (!file.exists()) {
             file.mkdirs();
         }
-        ZipExtractorTask task = new ZipExtractorTask(in,out, this, true);
+        ZipExtractorTask task = new ZipExtractorTask(in, out, this, true);
         task.setListener(this);
         task.execute();
     }
 
-    // String requestPath="http://7xjww9.com1.z0.glb.clouddn.com/Hopetoun_falls.jpg";
 
-   // String requestPath="https://github.com/Michelle0716/UtilTool/archive/V1.1.zip";
-    String requestPath="https://github.com/Michelle0716/DownloadFile/archive/V1.0.1.zip";
-    String sdDown=path+"/mythroads/";
-    String name=new File(requestPath).getName();;
+    String name = new File(Constant.requestPath).getName();
+    ;
 
-    private void doDownLoadWork(String download,String sdOutPath){
-        File file =new File(sdOutPath);
-        if(!file.exists()){
+    private void doDownLoadWork(String download, String sdOutPath) {
+        File file = new File(sdOutPath);
+        if (!file.exists()) {
             file.mkdirs();
         }
         DownLoaderTask task = new DownLoaderTask(download, sdOutPath, this);
@@ -167,8 +183,9 @@ public class MainActivity extends Activity  implements DownResultInterface,ZipEx
 
 
     private ProgressDialog mDialog;
-    private ProgressDialog getDialog(Context context,String title,int style){
-        mDialog=new ProgressDialog(context);
+
+    private ProgressDialog getDialog(Context context, String title, int style) {
+        mDialog = new ProgressDialog(context);
         mDialog.setTitle(title);
         mDialog.setProgressStyle(style);
         mDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -188,13 +205,13 @@ public class MainActivity extends Activity  implements DownResultInterface,ZipEx
     public void downloadSuccess() {
         Log.e(TAG, "downloadSuccess");
         showUnzipDialog();
-      //  text.setText("下载成功");
+        //  text.setText("下载成功");
     }
 
     @Override
     public void downloadError() {
-        Log.e(TAG,"downloadError");
-      //  text.setText("下载失败");
+        Log.e(TAG, "downloadError");
+        //  text.setText("下载失败");
     }
 
     @Override
@@ -205,14 +222,14 @@ public class MainActivity extends Activity  implements DownResultInterface,ZipEx
     @Override
     public void ZipExtraSuccess() {
 
-     //   text.setText("解压成功");
-        Log.e(TAG,"ZipExtraSuccess");
+        //   text.setText("解压成功");
+        Log.e(TAG, "ZipExtraSuccess");
     }
 
     @Override
     public void ZipExtraError() {
-      //  text.setText("解压失败");
-        Log.e(TAG,"ZipExtraError()");
+        //  text.setText("解压失败");
+        Log.e(TAG, "ZipExtraError()");
     }
 
     @Override
