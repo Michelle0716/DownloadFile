@@ -7,12 +7,18 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
+import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,6 +80,7 @@ public class UpdataApkUtil {
     /**
      * @param
      * @param context
+     * android  免root 自动安装
      */
     public void installApk(Uri contentUri, Context context) {
         Log.i(TAG, "开始执行安装: " + contentUri);
@@ -96,6 +103,69 @@ public class UpdataApkUtil {
         }
         //  notificationManager.cancel(1);//取消通知
     }
+
+
+    /**
+     * 执行具体的静默安装逻辑，需要手机ROOT。
+     *
+     * @param apkPath
+     * @return 安装成功返回true，安装失败返回false。
+     */
+    public void installRoot(final String apkPath, final Context context,final  Uri contentUri) {
+        new AsyncTask<Boolean, Object, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Boolean... params) {
+                boolean result = false;
+                DataOutputStream dataOutputStream = null;
+                BufferedReader errorStream = null;
+                try {
+                    // 申请su权限
+                    Process process = Runtime.getRuntime().exec("su");
+                    dataOutputStream = new DataOutputStream(process.getOutputStream());
+                    // 执行pm install命令
+                    String command = "pm install -r " + apkPath + "\n";
+                    dataOutputStream.write(command.getBytes(Charset.forName("utf-8")));
+                    dataOutputStream.flush();
+                    dataOutputStream.writeBytes("exit\n");
+                    dataOutputStream.flush();
+                    int i = process.waitFor();
+                    if (i == 0) {
+                        result = true; // 正确获取root权限
+                    } else {
+                        result = false; // 没有root权限，或者拒绝获取root权限
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, e.getMessage(), e);
+                } finally {
+                    try {
+                        if (dataOutputStream != null) {
+                            dataOutputStream.close();
+                        }
+                        if (errorStream != null) {
+                            errorStream.close();
+                        }
+                    } catch (IOException e) {
+                        Log.e(TAG, e.getMessage(), e);
+                    }
+                }
+                return result;
+            }
+
+            @Override
+            protected void onPostExecute(Boolean hasRoot) {
+                // Toast.makeText(this, "唔好意思，本机冇root权限~~", Toast.LENGTH_SHORT).show();
+                if (!hasRoot) {
+                    // 回调给app，去自动安装,installApk(Uri contentUri, Context context)
+                    installApk(contentUri, context);
+
+                } else {
+                    Toast.makeText(context, "安装完成!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }.execute();
+    }
+
+
 
 
     public Uri getPathUri(Context context, String filePath) {

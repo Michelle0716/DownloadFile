@@ -4,15 +4,33 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    >
+    android:orientation="vertical">
 
-    <TextView
+    <Button
         android:id="@+id/text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
+        android:text="下载解压/下载安装"
         android:textSize="22sp"
         android:layout_margin="20dp"
+        />
+
+    <Button
+        android:id="@+id/root_install"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="22sp"
+        android:text="root后安装"
+        android:layout_margin="20dp"
+        />
+
+    <Button
+        android:id="@+id/auto_install"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="22sp"
+        android:layout_margin="20dp"
+        android:text="免root自动安装，不需要人为点击安装，需要开启无障碍服务"
         />
 
 </LinearLayout>
